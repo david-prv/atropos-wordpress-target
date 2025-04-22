@@ -29,6 +29,7 @@ if(!isset($_GET["fuzz_shortcode"])) exit(1);
 
 function process_input() {
     include('/var/www/html/wp-load.php');
+    global $shortcode_tags;
     echo call_user_func($shortcode_tags[$_GET["fuzz_shortcode"]]);
 }
 """
@@ -39,19 +40,18 @@ if(!isset($_GET["fuzz_rest_route"])) exit(1);
 
 /* dynamic content here */
 
-function startswith($text, $prefix ) {
-    return strpos($text, $prefix) === 0;
-}
-  
-function user_has_permission($result) {
-    if ($result instanceof WP_Error) {
-        return false;
+function process_input() {
+    include('/var/www/html/wp-load.php');
+    $route = explode("@", $_GET["fuzz_rest_route"] ?? '');
+
+    function user_has_permission($result) {
+	if ($result instanceof WP_Error) {
+	    return false;
+	}
+	
+        return $result;
     }
 
-    return $result;
-}
-
-function do_rest_route($route) {
     foreach (rest_get_server()->get_routes() as $key => $handlers) {
 	    if ((string) $key != $route[0]) {
     		continue;
@@ -70,13 +70,6 @@ function do_rest_route($route) {
 	    	}
         }
     }
-}
-
-function process_input() {
-	include('/var/www/html/wp-load.php');
-
-    $route = explode("@", $_GET["fuzz_rest_route"] ?? '');
-	do_rest_route($route);
 }
 """
 
@@ -148,12 +141,12 @@ function do_the_action($action) {
 function process_input() {
     define('WP_ADMIN', true);
 
-	include('/var/www/html/wp-load.php');
+    include('/var/www/html/wp-load.php');
     include('/var/www/html/wp-admin/includes/admin.php');
     include('/var/www/html/wp-admin/menu.php');
 
-	do_action("admin_init");
-	do_the_action($_GET["fuzz_menu_action"]);
+    do_action("admin_init");
+    do_the_action($_GET["fuzz_menu_action"]);
 }
 """
 
