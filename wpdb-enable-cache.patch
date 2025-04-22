@@ -1,0 +1,69 @@
+--- wordpress/wp-includes/class-wpdb.php	2025-03-18 14:15:57.398191962 +0100
++++ ./class-wpdb.php	2025-03-18 14:15:25.553809364 +0100
+@@ -3135,19 +3135,33 @@
+ 		$this->func_call = "\$db->get_results(\"$query\", $output)";
+ 
+ 		if ( $query ) {
++			// calculate cache key depending on query and output type
++			$cache_key     = md5( $query . '|' . $output );
++			$cache_group   = 'wpdb_get_results';
++			$cached_result = wp_cache_get( $cache_key, $cache_group );
++
++			// if result was cached, return it instantly
++			if ( false !== $cached_result ) {
++				return $cached_result;
++			}
++
+ 			if ( $this->check_current_query && $this->check_safe_collation( $query ) ) {
+ 				$this->check_current_query = false;
+ 			}
+ 
++			// run query and store results to $this->last_result
+ 			$this->query( $query );
+ 		} else {
++			// return null, because no query is present
+ 			return null;
+ 		}
+ 
+-		$new_array = array();
++		$new_array       = array();
++		$result_to_cache = null;
++
+ 		if ( OBJECT === $output ) {
+ 			// Return an integer-keyed array of row objects.
+-			return $this->last_result;
++			$result_to_cache = $this->last_result;
+ 		} elseif ( OBJECT_K === $output ) {
+ 			/*
+ 			 * Return an array of row objects with keys from column 1.
+@@ -3162,7 +3176,7 @@
+ 					}
+ 				}
+ 			}
+-			return $new_array;
++			$result_to_cache = $new_array;
+ 		} elseif ( ARRAY_A === $output || ARRAY_N === $output ) {
+ 			// Return an integer-keyed array of...
+ 			if ( $this->last_result ) {
+@@ -3178,12 +3192,18 @@
+ 					}
+ 				}
+ 			}
+-			return $new_array;
++			$result_to_cache = $new_array;
+ 		} elseif ( strtoupper( $output ) === OBJECT ) {
+ 			// Back compat for OBJECT being previously case-insensitive.
+-			return $this->last_result;
++			$result_to_cache = $this->last_result;
++		}
++		
++		// set persistent cache for current cache key iff serializable
++		if ( is_array( $result_to_cache ) || is_object( $result_to_cache ) ) {
++			wp_cache_set( $cache_key, $result_to_cache, $cache_group, HOUR_IN_SECONDS );
+ 		}
+-		return null;
++	
++		return $result_to_cache;
+ 	}
+ 
+ 	/**
