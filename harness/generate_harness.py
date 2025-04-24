@@ -41,21 +41,26 @@ if(!isset($_GET["fuzz_rest_route"])) exit(1);
 /* dynamic content here */
 
 function process_input() {
-    include('/var/www/html/wp-load.php');
     $route = explode("@", $_GET["fuzz_rest_route"] ?? '');
 
+    // this has to be here, AFTER we store the route above!
+    include('/var/www/html/wp-load.php');
+
     function user_has_permission($result) {
-	if ($result instanceof WP_Error) {
-	    return false;
-	}
-	
+        if ($result instanceof WP_Error) {
+            return false;
+        }
+
         return $result;
     }
 
     foreach (rest_get_server()->get_routes() as $key => $handlers) {
-	    if ((string) $key != $route[0]) {
-    		continue;
-	    }
+	if ((string) $key != $route[0]) {
+   	    continue;
+	}
+
+	unset($_GET["fuzz_rest_route"]);
+    	ksort($_GET);
 
     	foreach($handlers as $handler_key => $handler) {
 	    	if ((string) $handler_key != $route[1]) {
@@ -63,10 +68,15 @@ function process_input() {
     		}
 
 	    	$request = new WP_REST_Request($key);
-		    if (
+
+		foreach($_GET as $arg_key => $arg_value) {
+                    $request->set_param($arg_key, $arg_value);
+                }
+
+		if (
                     (!array_key_exists('permission_callback', $handler)) ||
                     (user_has_permission(call_user_func($handler['permission_callback'], $request)))) {
-                call_user_func($handler['callback'], $request);
+                    call_user_func($handler['callback'], $request);
 	    	}
         }
     }
@@ -79,74 +89,18 @@ if(!isset($_GET["fuzz_menu_action"])) exit(1);
 
 /* dynamic content here */
 
-function get_number_of_args($hook_name, $priority = 10) {
-    global $wp_filter;
-
-    if (isset($wp_filter[$hook_name])) {
-        $hook = $wp_filter[$hook_name];
-
-        if ($hook instanceof WP_Hook && isset($hook->callbacks[$priority])) {
-            $callbacks = $hook->callbacks[$priority];
-
-            if (is_array($callbacks) && isset($callbacks[0])) {
-                foreach ($callbacks as $callback) {
-                    if (isset($callback['accepted_args'])) {
-                        return $callback['accepted_args'];
-                    }
-                }
-            }
-
-            foreach ($callbacks as $callback) {
-                if (isset($callback['accepted_args'])) {
-                    return $callback['accepted_args'];
-                }
-            }
-        }
-    }
-
-    return 0;
-}
-
-function do_the_action($action) {
-    $number_of_args = get_number_of_args($action);
-
-    unset($_GET["fuzz_menu_action"]);
-
-    ksort($_GET);
-    $args = array_values($_GET);
-
-    switch ($number_of_args) {
-        default:
-        case 0:
-            do_action($action);
-            break;
-        case 1:
-            do_action($action, $args[0] ?? "");
-            break;
-        case 2:
-            do_action($action, $args[0] ?? "", $args[1] ?? "");
-            break;
-        case 3:
-            do_action($action, $args[0] ?? "", $args[1] ?? "", $args[2] ?? "");
-            break;
-        case 4:
-            do_action($action, $args[0] ?? "", $args[1] ?? "", $args[2] ?? "", $args[3] ?? "");
-            break;
-        case 5:
-            do_action($action, $args[0] ?? "", $args[1] ?? "", $args[2] ?? "", $args[3] ?? "", $args[4] ?? "");
-            break;
-    }
-}
-
 function process_input() {
+    define('WP_USE_THEMES', false);
     define('WP_ADMIN', true);
 
     include('/var/www/html/wp-load.php');
     include('/var/www/html/wp-admin/includes/admin.php');
-    include('/var/www/html/wp-admin/menu.php');
 
-    do_action("admin_init");
-    do_the_action($_GET["fuzz_menu_action"]);
+    do_action('init');
+    do_action('admin_init');
+    do_action('admin_menu');
+
+    do_action($_GET["fuzz_menu_action"]);
 }
 """
 
