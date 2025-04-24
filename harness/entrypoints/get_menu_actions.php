@@ -16,7 +16,15 @@ include('/var/www/html/wp-admin/includes/admin.php');
 include('/var/www/html/wp-admin/menu.php');
 
 $exclude = [
-	"settings_page_redis-cache"
+	// exclude redis-cache
+	"settings_page_redis-cache",
+
+	// exclude builtin pages
+	// @TODO: may be include them again?
+	"tools_page_theme-editor",
+	"posts_page_theme-editor",
+	"tools_page_plugin-editor",
+	"posts_page_plugin-editor"
 ];
 
 foreach($_registered_pages as $key => $value) {
