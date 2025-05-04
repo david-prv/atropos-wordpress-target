@@ -15,7 +15,7 @@ RUN rm -rf /tmp/php-src
 WORKDIR /var/www/html
 
 # based on https://github.com/conetix/docker-wordpress-cli
-RUN apt-get update && apt-get install -y sudo less dnsutils
+RUN apt-get update --allow-releaseinfo-change && apt-get install -y sudo less dnsutils
 
 # install redis-server for object cache
 RUN apt-get install redis-server -y && service redis-server start && service --status-all | grep redis-server
