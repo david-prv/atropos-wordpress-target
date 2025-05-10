@@ -77,7 +77,8 @@ echo "[+] Installing plugins"
 #mv /tmp/cvwp/* /var/www/html/wp-content/plugins/
 #rm -rf /tmp/cvwp
 
-cp -r /tmp/plugin /var/www/html/wp-content/plugins
+cp -r /tmp/plugins/* /var/www/html/wp-content/plugins
+rm -rf /tmp/plugins
 
 # install redis cache and activate all
 wp plugin install redis-cache
@@ -114,6 +115,7 @@ cp /dev/shm/browser_data.json /var/www/html/wp-content/plugins/harness
 python3 /var/www/html/wp-content/plugins/harness/generate_harness.py
 
 rm /var/www/html/wp-content/plugins/harness/generate_harness.py
+rm -rf /var/www/html/wp-content/plugins/harness/entrypoints/
 
 chown www-data:www-data -R /var/www/html
 find /var/www/html -type d -exec chmod 755 {} \;
