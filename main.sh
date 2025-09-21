@@ -81,8 +81,15 @@ cp -r /tmp/plugins/* /var/www/html/wp-content/plugins
 rm -rf /tmp/plugins
 
 # install redis cache and activate all
+wp plugin delete hello akismet --allow-root || true
 wp plugin install redis-cache
 wp plugin activate --all
+
+# remove unnecessary themes
+wp theme delete twentytwentythree twentytwentyfour --allow-root || true
+
+# enable redis module
+wp redis enable
 
 chown www-data:www-data -R /var/www/html
 find /var/www/html -type d -exec chmod 755 {} \;
