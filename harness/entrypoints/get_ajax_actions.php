@@ -5,6 +5,8 @@ ini_set('error_reporting', E_ALL );
 
 include('/var/www/html/wp-load.php');
 
+do_action("admin_init");
+
 $exclude = [
         // Builtin WordPress
         "wp_ajax_save-widget",
