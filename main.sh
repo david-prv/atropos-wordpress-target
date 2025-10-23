@@ -19,6 +19,7 @@ if [ -e "$file" ]; then
 fi
 
 chown -R mysql:mysql /var/lib/mysql /var/run/mysqld
+chmod 777 /tmp
 
 a2enmod rewrite
 a2enmod actions
@@ -103,11 +104,13 @@ tail -f /var/log/apache2/*.log &
 # idle waiting for abort from user
 ( trap exit SIGINT ; read -r -d '' _ </dev/tty ) ## wait for Ctrl-C
 
-echo "[+] Enabling persistent object cache support"
+echo "[+] Enabling persistent object cache support and patched nonce verification"
 
 # install new wpdb class extension
 patch /var/www/html/wp-includes/class-wpdb.php < /tmp/wpdb-enable-cache.patch || exit 1
+patch /var/www/html/wp-includes/pluggable.php < /tmp/wp-bypass-nonces.patch || exit 1
 rm /tmp/wpdb-enable-cache.patch
+rm /tmp/wp-bypass-nonces.patch
 
 echo "[+] Instrumenting wordpress core API"
 
